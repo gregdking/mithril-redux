@@ -6,25 +6,34 @@
 var Model = 0;
 
 /*
- *  Update
+ *  Actions
  */
-var Actions = {
-    increment: { type: 'INCREMENT' },
-    decrement: { type: 'DECREMENT' }
-};
+var INCREMENT = 'INCREMENT',
+    DECREMENT = 'DECREMENT';
 
-//  update :: Model -> Actions -> Model -> Action -> Model
-var update = R.curry(function update(initialState, actions, state, action) {
-    state = R.defaultTo(initialState, state);
+function increment() {
+    return { type: INCREMENT };
+}
+
+function decrement() {
+    return { type: DECREMENT };
+}
+
+/*
+ *  Reducer
+ */
+
+//  reducer :: (Model -> Action) -> Model
+function reducer(state, action) {
     switch (action.type) {
-        case actions.increment.type:
+        case INCREMENT:
             return state + 1;
-        case actions.decrement.type:
+        case DECREMENT:
             return state - 1;
         default:
             return state;
     }
-});
+}
 
 /*
  *  View
@@ -33,32 +42,24 @@ var update = R.curry(function update(initialState, actions, state, action) {
 var div = m.bind(m, 'div'),
     span = m.bind(m, 'span');
 
-//  view :: (Model, Dispatchers) -> m.VirtualElement
-//      Dispatchers = { increment: Dispatcher, decrement: Dispatcher }
-//      Dispatcher = * -> (* -> Action)
+//  view :: (Model, (Action -> (* -> Action))) -> m.VirtualElement
 function view(state, dispatch) {
     return div([
-        button('-', dispatch.decrement),
+        button('-', dispatch(decrement())),
         span(state),
-        button('+', dispatch.increment)
+        button('+', dispatch(increment()))
     ]);
 }
 
-//  button :: (String, Dispatcher) -> m.VirtualElement
-//      Dispatcher = * -> (* -> Action)
-function button(text, dispatcher) {
-    return m('button', { onclick: dispatcher() }, text);
+//  button :: (String, (* -> *)) -> m.VirtualElement
+function button(text, onclick) {
+    return m('button', { onclick: onclick }, text);
 }
 
 /*
  *  App Startup
  */
 
-var store = Redux.createStore(update(Model, Actions));
+var store = Redux.createStore(reducer, Model);
 
-var dispatchers = {
-    increment: Utility.createDispatcher(store, Actions.increment),
-    decrement: Utility.createDispatcher(store, Actions.decrement)
-};
-
-Utility.startMithril(document.getElementById('root'), view, store, dispatchers);
+Utility.startMithril(document.getElementById('root'), view, store);
